@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="  
+      http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd  
+      http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd  
+      http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+	<!-- 1.配置Spring MVC自动扫描的注解包路径  禁止使用默认的过滤扫描器-->
+	<context:component-scan base-package="com.znsd.ssm" use-default-filters="false">
+		<!-- 配置springmvc只扫描指定的注解，避免和applicationContext.xml重复扫描 -->
+		<context:include-filter type="annotation"
+			expression="org.springframework.stereotype.Controller" />
+		<context:include-filter type="annotation"
+			expression="org.springframework.web.bind.annotation.ControllerAdvice" />
+	</context:component-scan>
+	
+	
+	<!-- 2.配置视图解析器 -->
+	<bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<!-- 指定前缀 -->
+		<property name="prefix" value="/WEB-INF/views/"/>
+		<!-- 指定后缀 -->
+		<property name="suffix" value=".jsp"/>
+	</bean>
+	
+	<!-- 3.俩个在开发中一般都要加上的标配 -->
+	<!-- 处理静态资源 -->
+	<mvc:default-servlet-handler/>
+	<!-- 支持springmvc中更高级的操作比如：JSR303校验 ，ajax请求，映射动态请求-->
+	<mvc:annotation-driven />
+
+
+</beans>

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans   
+    http://www.springframework.org/schema/beans/spring-beans.xsd  
+    http://www.springframework.org/schema/context  
+    http://www.springframework.org/schema/context/spring-context.xsd  
+    http://www.springframework.org/schema/aop  
+    http://www.springframework.org/schema/aop/spring-aop.xsd  
+    http://www.springframework.org/schema/tx   
+    http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+	<!-- 0.配置加载数据源db.properties配置文件 -->
+	<context:property-placeholder location="classpath:db.properties" />
+
+	<!-- 1.开启扫描注解 -->
+	<context:component-scan base-package="com.znsd.ssm">
+		<!-- 配置spring不扫描指定的注解，避免和springmvc.xml重复扫描 --> 
+		<context:include-filter type="annotation"
+			expression="org.springframework.stereotype.Controller" />
+		<context:include-filter type="annotation"
+			expression="org.springframework.web.bind.annotation.ControllerAdvice" />
+	</context:component-scan>
+
+	<!-- 2.配置数据源 -->
+	<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+		<property name="driverClass" value="${jdbc.driver}" />
+		<property name="jdbcUrl" value="${jdbc.url}" />
+		<property name="user" value="${jdbc.username}" />
+		<property name="password" value="${jdbc.password}" />
+	</bean>
+
+	<!-- 3.配置mybatis的sqlSessionFactory -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<!-- 向sqlSessionFactory中注入数据源 -->
+		<property name="dataSource" ref="dataSource" />
+		<!-- 指定加载mybatis的核心加载文件位置 -->
+		<property name="configLocation" value="classpath:mybatis-config.xml" />
+		<!-- 如果不写mybatis配置文件，可以使用typeAliasesPackage为每一个实体类引入别名 -->
+		<!-- <property name="typeAliasesPackage" value="com.znsd.ssm.entity" /> -->
+		<!-- 指定mybatis的mapper文件的位置 -->
+		<property name="mapperLocations" value="classpath:mapper/*.xml" />
+	</bean>
+
+	<!-- 4. 自动扫描mybatis映射文件和接口的包 -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<!-- 扫描所有的dao接口的实现加入到IOC容器中 -->
+		<property name="basePackage" value="com.znsd.ssm.dao" />
+	</bean>
+	
+	<!-- =========配置一个可以执行批量的sqlSession======================================= -->
+		<bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+			<constructor-arg name="sqlSessionFactory" ref="sqlSessionFactory"></constructor-arg>
+			<constructor-arg name="executorType" value="BATCH"></constructor-arg>
+		</bean>
+	
+	<!-- ================================================ -->
+	
+	
+	<!-- 5.事物控制 -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<!-- 6.开启基于注解的事物，或使用xml配置形式的事物（一般使用xml配置） -->
+	<!-- <tx:annotation-driven transaction-manager="transactionManager"/> -->
+
+	<!-- 6.1 配置事物增强 -->
+	<tx:advice id="txAdvice" transaction-manager="transactionManager">
+		<tx:attributes>
+			<!-- 配置事物方法 -->
+			<tx:method name="get*" read-only="true" />
+			<tx:method name="find*" read-only="true"/>
+			<tx:method name="insert*" propagation="REQUIRED"/>
+			<tx:method name="save*" propagation="REQUIRED"/>
+			<tx:method name="delete*" propagation="REQUIRED"/>
+			<tx:method name="update*" propagation="REQUIRED"/>
+			<tx:method name="*" read-only="true" />
+		</tx:attributes>
+	</tx:advice>
+	
+	<!-- 6.2  配置事物切入点，以及把事物切点和事物关联起来 -->
+	<aop:config>
+		<!-- 6.2.1 配置切入点表达式 -->
+		<aop:pointcut expression="execution(* com.znsd.ssm.service.*.*(..))"
+			id="pointcut" />
+		<!-- 6.2.2配置切面，增强 -->
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="pointcut" />
+	</aop:config> 
+
+
+
+
+
+
+</beans>
